@@ -1,4 +1,4 @@
-import math
+import numpy as np
 import random
 
 
@@ -16,7 +16,7 @@ class Events:
         intervals = []
         while True:
             # Времена между событиями имеют экспоненциальное распределение
-            x = -math.log(1.0 - random.random()) / m
+            x = -np.log(1.0 - random.random()) / m
             time += x
             if (time > end):
                 break
