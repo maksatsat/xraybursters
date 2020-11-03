@@ -41,3 +41,12 @@ plt.show()
 
 ![example2](examples/example2.png)
 
+```
+period = 80
+n, bins, patches = plt.hist(evnts%period/period, 100, range=(0,1))
+plt.xlabel('Phase')
+plt.ylabel('Number of events')
+plt.show()
+```
+![example3](examples/example3.png)
+
