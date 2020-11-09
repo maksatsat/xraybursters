@@ -2,15 +2,12 @@ import numpy as np
 import random
 
 
-import numpy as np
-import random
-
-
 class Events:
-    def __init__(self, m, intervals, period1, period2):
+    def __init__(self, m, intervals, shape_function, period1, period2):
         self.m = m  # Число событий в единицу времени
         self.period1 = period1  # duration of events
         self.period2 = period2  # duration between events
+        self.shape_function = shape_function
         self.intervals = intervals
         self.start_time, self.intervals_in_seconds = Events.dates_to_seconds(
             self.intervals)
@@ -18,8 +15,9 @@ class Events:
             self.period1, self.period2, self.intervals_in_seconds)
         self.events_in_seconds_initial = Events.generate_events(
             self.m, self.intervals_in_seconds, period1, period2)
-        self.events_in_seconds = Events.fit_events_to_periods(
-            self.events_in_seconds_initial, self.allowed_periods)
+#         self.events_in_seconds = Events.signal_shape(self.events_in_seconds_initial, Events.sin_signal, period1, period2)
+        self.events_in_seconds = Events.signal_shape(
+            self.events_in_seconds_initial, self.shape_function, period1, period2)
         self.events = Events.seconds_to_dates(
             self.start_time, self.events_in_seconds)
 
@@ -88,6 +86,23 @@ class Events:
                 if period[0] <= event <= period[1]:
                     res.append(event)
         return res
+
+    def signal_shape(events, shape_function, period1, period2):
+        res = []
+        for event in events:
+            if np.random.random() < shape_function(event, period1, period2):
+                res.append(event)
+        return res
+
+    def sin_signal(t, period1, period2, phase=0, m=0.5):
+        period = period1 + period2
+        return 1-m*(1-np.sin(2*np.pi*t/period+phase))
+
+    def pulse_wave(t, period1, period2, phase=0):
+        if (t-phase) % (period1+period2) > period1:
+            return 1
+        else:
+            return 0
 
 
 def Check_Poissoness(events):
