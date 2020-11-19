@@ -52,3 +52,11 @@ plt.show()
 ```
 ![example3](examples/example3.png)
 
+## Поиск периодичностей
+
+```
+from search_period import periods_statistic, chi_2, fold
+per, stat = periods_statistic(evnts_sin, chi_2, fold, 5, 10, 200)
+```
+
+![example4](examples/example4.png)
