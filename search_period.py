@@ -1,33 +1,26 @@
 import numpy as np
 
 
-def fold(events, period, bins):
-    x = np.sort(events % period/period)
-    folded = np.zeros(bins, dtype=int)
-    for i in x:
-        folded[int(i//(1/bins))] += 1
-    return folded
-
-
-def chi_2(evnts, fold, period, bins):
-    #     expected = (len(evnts)/(evnts[-1]-evnts[0]))*period/bins
-    folded = fold(evnts, period, bins)
-    expected = np.sum(folded)/bins
-    chi_square = 0
-    for f in folded:
-        chi_square += (f-expected)**2/expected
-    return chi_square
-
-
-def periods_statistic(evnts, chi_2, fold, bins, pmin, pmax):
-    T = evnts[-1] - evnts[0]
-    fmin = 1/pmax
-    fmax = 1/pmin
-    freq = fmin
-    stat = []
-    periods = []
-    while freq < fmax:
-        stat.append(chi_2(evnts, fold, 1/freq, bins))
-        periods.append(1/freq)
-        freq += 0.1/T
+def periods_statistic1(evnts, intervals, chi_2, fold, bins, pmin, pmax, n_steps=1000):
+    freq = np.linspace(1/pmax, 1/pmin, n_steps)
+    periods = 1/freq[::-1]
+    stat = chi_2(evnts, fold, periods, bins)  # (n_periods, 1)
     return periods, stat
+
+
+def chi_2(evnts, fold, periods, bins):
+    folded = fold(evnts, periods, bins)  # (n_periods, bins)
+    expected = np.sum(folded, axis=1)/bins  # (n_periods, 1)
+    chi_square = np.sum((folded.T - expected)**2/expected, axis=0)
+    return chi_square.T
+
+
+def fold(events, periods, bins):
+    n = events.shape[0]
+    m = periods.shape[0]
+    p = np.repeat(periods, n).reshape(m, n)
+    e = np.repeat(events, m).reshape(n, m).T
+    x = np.sort(e % p/p)
+    folded = np.array([np.count_nonzero(x//(1/bins) == i, axis=1)
+                       for i in range(bins)])
+    return folded.T
