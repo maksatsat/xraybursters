@@ -1,29 +1,40 @@
 import numpy as np
+import time
 
 
 def periods_statistic(evnts, intervals, bins, pmin, pmax, n_steps=1000, exposure_on=True):
-    def chi_2(fold, evnts, exposure, periods, bins):
+
+    def _chi_2(fold, evnts, intervals, exposure, periods, bins):
+        print('start folding')
         folded = _fold(evnts, periods, bins)  # (n_periods, bins)
-        if exposure_on:
-            expo = exposure(intervals, periods, bins)
-            folded = folded*(2-expo)
+        print('folded')
+        print('start exposuring')
+        expo = exposure(intervals, periods, bins)
+        print('exposured')
+        folded1 = folded/expo
+        folded2 = folded*(2-expo)
 
         expected = np.sum(folded, axis=1)/bins  # (n_periods, 1)
         chi_square = np.sum((folded.T - expected)**2/expected, axis=0)
-        return chi_square.T
 
-    def fold(events, periods, bins):
+        expected1 = np.sum(folded1, axis=1)/bins  # (n_periods, 1)
+        chi_square1 = np.sum((folded1.T - expected1)**2/expected1, axis=0)
+
+        expected2 = np.sum(folded2, axis=1)/bins  # (n_periods, 1)
+        chi_square2 = np.sum((folded2.T - expected2)**2/expected2, axis=0)
+
+        return chi_square.T, chi_square1.T, chi_square2.T
+
+    def _fold(events, periods, bins):
         n = events.shape[0]
         m = periods.shape[0]
-        p = np.repeat(periods, n).reshape(m, n)
-        e = np.repeat(events, m).reshape(n, m).T
-        x = np.sort(e % p/p)
-        folded = np.array([np.count_nonzero(x//(1/bins) == i, axis=1)
+        e = np.repeat(events, m).reshape(n, m)  # (events, periods)
+        x = np.mod(e, periods)/periods
+        folded = np.array([np.count_nonzero(x//(1/bins) == i, axis=0)
                            for i in range(bins)])
-
         return folded.T
 
-    def exposure(intervals, periods, bins):
+    def _exposure(intervals, periods, bins):
         res = np.array([])
 
         for period in periods:
@@ -44,9 +55,9 @@ def periods_statistic(evnts, intervals, bins, pmin, pmax, n_steps=1000, exposure
                     dt*np.floor(intervals[indx][1]/dt)
                 indx += 1
 
-            num_periods = (dt*np.floor(intervals.transpose()
-                                       [1]/dt) - dt*np.ceil(intervals.transpose()[0]/dt))//period
-            exp_times += np.sum(num_periods)*dt
+            num_periods = np.count_nonzero(
+                ((dt*np.floor(intervals.transpose()[1]/dt) - dt*np.ceil(intervals.transpose()[0]/dt))//period) >= 0)
+            exp_times += num_periods*dt
 
             for k in range(len(i)):
                 if i[k] < j[k]:
@@ -59,9 +70,10 @@ def periods_statistic(evnts, intervals, bins, pmin, pmax, n_steps=1000, exposure
             exp_times /= np.max(exp_times)
             res = np.concatenate((res, exp_times))
         return res.reshape((periods.shape[0], bins))
-#     freq = np.linspace(1/pmax, 1/pmin, n_steps)
-#     periods = 1/freq[::-1]
+
+    start_time = time.time()
     periods = np.linspace(pmin, pmax, n_steps)
-#     expo = _exposure(intervals, periods, bins)
-    stat = chi_2(_fold, evnts, exposure, periods, bins)  # (n_periods, 1)
-    return periods, stat
+    stat, stat1, stat3 = _chi_2(
+        _fold, evnts, intervals, _exposure, periods, bins)  # (n_periods, 1)
+    print("Completed for ", (time.time()-start_time)/60, " minutes")
+    return periods, stat, stat1, stat3

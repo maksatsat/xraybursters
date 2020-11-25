@@ -55,8 +55,31 @@ plt.show()
 ## Поиск периодичностей
 
 ```
-from search_period import periods_statistic, chi_2, fold
-per, stat = periods_statistic(evnts_sin, chi_2, fold, 5, 10, 200)
+from search_period import periods_statistic
+per, stat, stat1, stat2 = periods_statistic(evnts_sin, intrvls, 5, 10, 200)
 ```
 
 ![example4](examples/example4.png)
+
+```
+per, stat, stat1, stat2 = periods_statistic(evnts, intrvls, 5, 10*24*3600, 12*24*3600)
+```
+
+![example5](examples/example5.png)
+
+![example6](examples/example6.png)
+
+## С учетом "дыр"
+
+```
+time_intervals = [['2020-11-25 00:00:00.000000','2020-11-25 12:00:00.000000'], ['2020-11-25 18:00:00.000000','2020-11-26 00:00:00.000000'], ['2020-11-26 18:00:00.000000','2020-11-28 18:00:00.000000'], ['2020-11-29 18:00:00.000000','2020-12-01 18:00:00.000000'],]
+
+b = Events(1/(5*60), time_intervals, sin_signal1, 0, 12*3600)
+evnts1 = np.array(b.events_in_seconds)
+intrvls1 = np.array(b.intervals_in_seconds)
+per_b, stat_b, stat1_b, stat2_b = periods_statistic(evnts1, intrvls1, 5, 5*3600, 15*3600)
+```
+
+![example7](examples/example7.png)
+
+![example8](examples/example8.png)
