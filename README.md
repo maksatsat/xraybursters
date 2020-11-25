@@ -77,6 +77,7 @@ time_intervals = [['2020-11-25 00:00:00.000000','2020-11-25 12:00:00.000000'], [
 b = Events(1/(5*60), time_intervals, sin_signal1, 0, 12*3600)
 evnts1 = np.array(b.events_in_seconds)
 intrvls1 = np.array(b.intervals_in_seconds)
+
 per_b, stat_b, stat1_b, stat2_b = periods_statistic(evnts1, intrvls1, 5, 5*3600, 15*3600)
 ```
 
