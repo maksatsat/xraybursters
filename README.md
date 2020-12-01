@@ -84,3 +84,16 @@ per_b, stat_b, stat1_b, stat2_b = periods_statistic(evnts1, intrvls1, 5, 5*3600,
 ![example7](examples/example7.png)
 
 ![example8](examples/example8.png)
+
+## Пример
+
+Наблюдения проводятся каждый день 22:00-02:00 с 
+01.11.2020 по 01.04.2021 22:00 
+
+![example9](examples/example9.png)
+
+![example10](examples/example10.png)
+
+![example11](examples/example11.png)
+
+![example12](examples/example12.png)
