@@ -53,3 +53,5 @@ geckodriver.log
 .vscode
 
 playground.ipynb
+
+garbage.*

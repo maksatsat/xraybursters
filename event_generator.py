@@ -3,25 +3,21 @@ import random
 
 
 class Events:
-    def __init__(self, m, intervals, shape_function, period1, period2):
+    def __init__(self, m, intervals, shape_function, period):
         self.m = m  # Число событий в единицу времени
-        self.period1 = period1  # duration of events
-        self.period2 = period2  # duration between events
+        self.period = period
         self.shape_function = shape_function
         self.intervals = intervals
         self.start_time, self.intervals_in_seconds = Events.dates_to_seconds(
             self.intervals)
-        self.allowed_periods = Events.generate_periods(
-            self.period1, self.period2, self.intervals_in_seconds)
         self.events_in_seconds_initial = Events.generate_events(
-            self.m, self.intervals_in_seconds, period1, period2)
-#         self.events_in_seconds = Events.signal_shape(self.events_in_seconds_initial, Events.sin_signal, period1, period2)
+            self.m, self.intervals_in_seconds, self.period)
         self.events_in_seconds = Events.signal_shape(
-            self.events_in_seconds_initial, self.shape_function, period1, period2)
+            self.events_in_seconds_initial, self.shape_function, self.period)
         self.events = Events.seconds_to_dates(
             self.start_time, self.events_in_seconds)
 
-    def generate_event(m, interval, period1, period2):
+    def generate_event(m, interval, period):
         start = interval[0]
         end = interval[1]
         time = start
@@ -38,10 +34,10 @@ class Events:
 
         return events
 
-    def generate_events(m, intervals, period1, period2):
+    def generate_events(m, intervals, period):
         events = []
         for interval in intervals:
-            event = Events.generate_event(m, interval, period1, period2)
+            event = Events.generate_event(m, interval, period)
             events += event
         return events
 
@@ -66,18 +62,18 @@ class Events:
             event_times.append(datetime.timedelta(seconds=event)+start_time)
         return event_times
 
-    def generate_periods(period1, period2, intervals_in_seconds):
-        import random
-        start, end = intervals_in_seconds[0][0], intervals_in_seconds[-1][-1]
-        t = random.uniform(0, period1)
-        res = []
-        while t < end:
-            if t+period1 < end:
-                res.append([t, t+period1])
-            else:
-                res.append([t, end])
-            t += period1 + period2
-        return res
+    # def generate_periods(period, intervals_in_seconds):
+    #     import random
+    #     start, end = intervals_in_seconds[0][0], intervals_in_seconds[-1][-1]
+    #     t = random.uniform(0, period1)
+    #     res = []
+    #     while t < end:
+    #         if t+period1 < end:
+    #             res.append([t, t+period1])
+    #         else:
+    #             res.append([t, end])
+    #         t += period1 + period2
+    #     return res
 
     def fit_events_to_periods(events, periods):
         res = []
@@ -87,18 +83,20 @@ class Events:
                     res.append(event)
         return res
 
-    def signal_shape(events, shape_function, period1, period2):
+    def signal_shape(events, shape_function, period):
         res = []
         for event in events:
-            if np.random.random() < shape_function(event, period1, period2):
+            if np.random.random() < shape_function(event, period):
                 res.append(event)
         return res
 
-    def sin_signal(t, period1, period2, phase=0, m=0.5):
-        period = period1 + period2
+    def sin_signal(t, period, phase=0, m=0.5):
+        # period = period1 + period2
         return 1-m*(1-np.sin(2*np.pi*t/period+phase))
 
     def pulse_wave(t, period1, period2, phase=0):
+        period1 = period
+        period2 = 0.5 * period
         if (t-phase) % (period1+period2) > period1:
             return 1
         else:
