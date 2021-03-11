@@ -54,4 +54,4 @@ geckodriver.log
 
 playground.ipynb
 
-garbage.*
+garbage/

@@ -10,33 +10,38 @@ def periods_statistic(evnts, intervals, bins, pmin, pmax, n_steps=1000):
         if intervals.shape[0] == 1:
             expected = np.sum(folded, axis=1)/bins  # (n_periods, 1)
             chi_square = np.sum((folded.T - expected)**2/expected, axis=0)
-            return chi_square.T, chi_square.T
+            return chi_square, chi_square
 
         expected = np.sum(folded, axis=1)/bins  # (n_periods, 1)
         chi_square = np.sum((folded.T - expected)**2/expected, axis=0)
 
         expo = exposure(intervals, periods, bins)  # (n_periods, bins)
-        expected_expo = len(evnts)/np.sum(intervals.T[1]-intervals.T[0])*expo
+        # the average burst rate per unit exposure time
+        p = len(evnts)/np.sum(intervals.T[1]-intervals.T[0])
+        expected_expo = p*expo
         chi_square_expo = np.zeros(len(periods))
-
         for i, period in enumerate(periods):
             for j in range(bins):
                 if expo[i][j] > 0:
                     chi_square_expo[i] += (folded[i][j] -
                                            expected_expo[i][j])**2/expected_expo[i][j]
+        # expo_time = exposure(intervals, periods, bins)  # (n_periods, bins)
+        # expo = expo = (expo_time.T/expo_time.max(axis=1)).T
+        # expected_expo = len(evnts)/np.sum(intervals.T[1]-intervals.T[0])*expo
+        # chi_square_expo = np.zeros(len(periods))
 
         # expected1 = np.sum(folded1, axis=1)/bins  # (n_periods, 1)
         # chi_square1 = np.sum((folded1.T - expected)**2/expected1, axis=0)
 
         # expected2 = len(evnts)/np.sum(intervals.T[1]-intervals.T[0])*expo
         # chi_square2 = np.sum((folded2 - expected2)**2/expected2, axis=1)
-        return chi_square.T, chi_square_expo.T
+        return chi_square, chi_square_expo
 
     def _fold(events, periods, bins):
         folded = np.zeros((len(periods), bins))
-        for i in range(len(periods)):
+        for i, period in enumerate(periods):
             folded[i] = np.histogram(
-                events % periods[i]/periods[i], bins, range=(0, 1))[0]
+                events % period/period, bins, range=(0, 1))[0]
         return folded
 
     def _exposure(intervals, periods, bins):
