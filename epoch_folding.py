@@ -79,7 +79,7 @@ def efsearch(name, nbins=10, n_steps=1000, num_simulations=100):
             for j in b:
                 if notfoundsim(j, merged_bursts):
                     merged_bursts.append(j)
-    merged_bursts = merged_bursts.sort()
+    merged_bursts.sort()
     # Converting from MJD to Y-m-d h:m:s.f string
     time_intervals = []
     for interv in merged_intervals:
