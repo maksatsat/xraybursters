@@ -10,7 +10,7 @@ from event_generator import Events
 from search_period import periods_statistic
 
 
-def efsearch(name, nbins=10, n_steps=1000, num_simulations=100):
+def efsearch(name, nbins=10, n_steps=1000, num_simulations=100, saving=True):
     # saving_directory = 'results/' + name + '/'
     saving_directory = '/'
     bursts_url = 'https://burst.sci.monash.edu/aqoutput?dtype=bursts&fields=name%2Ctime%2Cinstr&output=topcat&timef=mjd&qfield=name&query_op=%3D&query_val=' + \
@@ -32,20 +32,21 @@ def efsearch(name, nbins=10, n_steps=1000, num_simulations=100):
     instruments = bursts_table['instr'].unique()
     print('done')
 
-    print('Saving: ', end='')
-    burts_save = {
-        'Bursts': bursts_table['time_s']
-    }
-    df_bursts = pd.DataFrame(burts_save)
-    df_bursts.to_csv(saving_directory + name + ':bursts.csv', index=False)
-    observations_save = {
-        'Start': osbervations_table['tstart_s'],
-        'Stop': osbervations_table['tstop_s']
-    }
-    df_observations = pd.DataFrame(burts_save)
-    df_observations.to_csv(saving_directory + name +
-                           ':observations.csv', index=False)
-    print('done')
+    if saving:
+        print('Saving: ', end='')
+        burts_save = {
+            'Bursts': bursts_table['time_s']
+        }
+        df_bursts = pd.DataFrame(burts_save)
+        df_bursts.to_csv(saving_directory + name + ':bursts.csv', index=False)
+        observations_save = {
+            'Start': osbervations_table['tstart_s'],
+            'Stop': osbervations_table['tstop_s']
+        }
+        df_observations = pd.DataFrame(burts_save)
+        df_observations.to_csv(saving_directory + name +
+                               ':observations.csv', index=False)
+        print('done')
 
     print('Merging observation intervals: ', end='')
     # объединенные интервалы наблюдений
@@ -111,8 +112,8 @@ def efsearch(name, nbins=10, n_steps=1000, num_simulations=100):
     # поиск периодов на временах порядка часов
     hpmin = np.min(evnts[1:]-evnts[:-1])
     hpmax = 3600*24*1
-    print('Searching periods from ' + str(pmin/(3600)) +
-          ' hours to ' + str(pmax/(3600)) + ' hours')
+    print('Searching periods from ' + str(hpmin/(3600)) +
+          ' hours to ' + str(hpmax/(3600)) + ' hours')
     hper, hstat, hstat_expo = periods_statistic(
         evnts, intrvls, nbins, hpmin, hpmax, n_steps=n_steps)
 
@@ -132,24 +133,25 @@ def efsearch(name, nbins=10, n_steps=1000, num_simulations=100):
             xevnts, intrvls, nbins, hpmin, hpmax, n_steps=n_steps)
         hxstats[i] = xstat_expo
 
-    print('Saving data: ', end='done')
+    if saving:
+        print('Saving data: ', end='done')
 
-    hours_data = {
-        'Periods': hper,
-        'Chi square (без учета экспозиции)': hstat,
-        'Chi square (с учетом экспозиции)': hstat_expo,
-    }
-    for i in range(num_simulations):
-        hours_data['Simulation ' + str(i)] = hxstats[i]
-    df1 = pd.DataFrame(hours_data)
-    df1.to_csv(saving_directory + name + ':hours.csv', index=False)
-    print('done')
+        hours_data = {
+            'Periods': hper,
+            'Chi square (без учета экспозиции)': hstat,
+            'Chi square (с учетом экспозиции)': hstat_expo,
+        }
+        for i in range(num_simulations):
+            hours_data['Simulation ' + str(i)] = hxstats[i]
+        df1 = pd.DataFrame(hours_data)
+        df1.to_csv(saving_directory + name + ':hours.csv', index=False)
+        print('done')
 
     # поиск периодов на временах порядка дней
     dpmin = 3600*24*1
     dpmax = 3600*24*400
-    print('Searching periods from ' + str(pmin/(3600*24)) +
-          ' days to ' + str(pmax/(3600*24)) + ' days')
+    print('Searching periods from ' + str(dpmin/(3600*24)) +
+          ' days to ' + str(dpmax/(3600*24)) + ' days')
     dper, dstat, dstat_expo = periods_statistic(
         evnts, intrvls, nbins, dpmin, dpmax, n_steps=n_steps)
 
@@ -164,24 +166,25 @@ def efsearch(name, nbins=10, n_steps=1000, num_simulations=100):
             xevnts, intrvls, nbins, dpmin, dpmax, n_steps=n_steps)
         dxstats[i] = xstat_expo
 
-    print('Saving data', end='done')
-    days_data = {
-        'Periods': dper,
-        'Chi square (без учета экспозиции)': dstat,
-        'Chi square (с учетом экспозиции)': dstat_expo,
-    }
-    for i in range(num_simulations):
-        days_data['Simulation ' + str(i)] = dxstats[i]
-    df2 = pd.DataFrame(days_data)
-    df2.to_csv(saving_directory + name + ':days.csv', index=False)
-    print('done')
+    if saving:
+        print('Saving data', end='done')
+        days_data = {
+            'Periods': dper,
+            'Chi square (без учета экспозиции)': dstat,
+            'Chi square (с учетом экспозиции)': dstat_expo,
+        }
+        for i in range(num_simulations):
+            days_data['Simulation ' + str(i)] = dxstats[i]
+        df2 = pd.DataFrame(days_data)
+        df2.to_csv(saving_directory + name + ':days.csv', index=False)
+        print('done')
     # поиск периодов на временах порядка года
-    pmin = 3600*24*400
-    pmax = (evnts[-1]-evnts[0])/2
-    print('Searching periods from ' + str(pmin/(3600*24*365)) +
-          ' year to ' + str(pmax/(3600*24*365)) + ' years')
+    ypmin = 3600*24*400
+    ypmax = (evnts[-1]-evnts[0])/2
+    print('Searching periods from ' + str(ypmin/(3600*24*365)) +
+          ' year to ' + str(ypmax/(3600*24*365)) + ' years')
     yper, ystat, ystat_expo = periods_statistic(
-        evnts, intrvls, nbins, pmin, pmax, n_steps=n_steps)
+        evnts, intrvls, nbins, ypmin, ypmax, n_steps=n_steps)
 
     print('Simulations')
     yxstats = np.zeros((num_simulations, n_steps))
@@ -191,19 +194,20 @@ def efsearch(name, nbins=10, n_steps=1000, num_simulations=100):
         xintrvls = np.array(x.intervals_in_seconds)
         print(str(i+1) + '/' + str(num_simulations))
         yxper, xstat, xstat_expo = periods_statistic(
-            xevnts, intrvls, nbins, pmin, pmax, n_steps=n_steps)
+            xevnts, intrvls, nbins, ypmin, ypmax, n_steps=n_steps)
         yxstats[i] = 9
 
-    print('Saving data', end='done')
-    years_data = {
-        'Periods': yper,
-        'Chi square (без учета экспозиции)': ystat,
-        'Chi square (с учетом экспозиции)': ystat_expo,
-    }
-    for i in range(num_simulations):
-        years_data['Simulation ' + str(i)] = yxstats[i]
-    df3 = pd.DataFrame(years_data)
-    df3.to_csv(saving_directory + name + ':years.csv', index=False)
-    print('done')
+    if saving:
+        print('Saving data', end='done')
+        years_data = {
+            'Periods': yper,
+            'Chi square (без учета экспозиции)': ystat,
+            'Chi square (с учетом экспозиции)': ystat_expo,
+        }
+        for i in range(num_simulations):
+            years_data['Simulation ' + str(i)] = yxstats[i]
+        df3 = pd.DataFrame(years_data)
+        df3.to_csv(saving_directory + name + ':years.csv', index=False)
+        print('done')
 
     return hper, hstat, hstat_expo, hxstats, dper, dstat, dstat_expo, dxstats, yper, ystat, ystat_expo, yxstats
