@@ -17,28 +17,20 @@ class Events:
         self.events = Events.seconds_to_dates(
             self.start_time, self.events_in_seconds)
 
-    def generate_event(m, interval, period):
-        start = interval[0]
-        end = interval[1]
-        time = start
+    def generate_events_for_interval(m, interval, period):
+        time = interval[0] - np.log(1.0 - random.random()) / m
         events = []
-        intervals = []
-        while True:
-            # Времена между событиями имеют экспоненциальное распределение
-            x = -np.log(1.0 - random.random()) / m
-            time += x
-            if (time > end):
-                break
-            intervals.append(x)
+        while time < interval[1]:
             events.append(time)
-
+            time += -np.log(1.0 - random.random()) / m
+            # Времена между событиями имеют экспоненциальное распределение
         return events
 
     def generate_events(m, intervals, period):
         events = []
         for interval in intervals:
-            event = Events.generate_event(m, interval, period)
-            events += event
+            event = Events.generate_events_for_interval(m, interval, period)
+            events += event  # ?
         return events
 
     def dates_to_seconds(intervals):

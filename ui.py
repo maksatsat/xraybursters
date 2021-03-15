@@ -10,7 +10,13 @@ from event_generator import Events
 from search_period import periods_statistic
 
 
-def efsearch(bursts_url, osbervations_url, bins=10, n_steps=1000, num_simulations=100):
+def efsearch(name, nbins=10, n_steps=1000, num_simulations=100):
+    # saving_directory = 'results/' + name + '/'
+    saving_directory = '/'
+    bursts_url = 'https://burst.sci.monash.edu/aqoutput?dtype=bursts&fields=name%2Ctime%2Cinstr&output=topcat&timef=mjd&qfield=name&query_op=%3D&query_val=' + \
+        name.replace(' ', '+')
+    osbervations_url = 'https://burst.sci.monash.edu/aqoutput?dtype=observations&fields=name%2Ctstart%2Cinstr%2Ctstop&output=topcat&timef=mjd&qfield=name&query_op=%3D&query_val=' + \
+        name.replace(' ', '+')
 
     print('Reading data: ', end='')
     bursts_table = pd.read_csv(
@@ -23,10 +29,25 @@ def efsearch(bursts_url, osbervations_url, bins=10, n_steps=1000, num_simulation
         x.iso, '%Y-%m-%d %H:%M:%S.%f') for x in Time(osbervations_table['tstart'], format='mjd')]
     osbervations_table['tstop_s'] = [datetime.datetime.strptime(
         x.iso, '%Y-%m-%d %H:%M:%S.%f') for x in Time(osbervations_table['tstop'], format='mjd')]
-    name = bursts_table['name'][0]
     instruments = bursts_table['instr'].unique()
     print('done')
-    print('Mergin observation intervals: ', end='')
+
+    print('Saving: ', end='')
+    burts_save = {
+        'Bursts': bursts_table['time_s']
+    }
+    df_bursts = pd.DataFrame(burts_save)
+    df_bursts.to_csv(saving_directory + name + ':bursts.csv', index=False)
+    observations_save = {
+        'Start': osbervations_table['tstart_s'],
+        'Stop': osbervations_table['tstop_s']
+    }
+    df_observations = pd.DataFrame(burts_save)
+    df_observations.to_csv(saving_directory + name +
+                           ':observations.csv', index=False)
+    print('done')
+
+    print('Merging observation intervals: ', end='')
     # объединенные интервалы наблюдений
     merged_intervals = interval.interval()
     for i in range(len(instruments)):
@@ -37,16 +58,16 @@ def efsearch(bursts_url, osbervations_url, bins=10, n_steps=1000, num_simulation
                 merged_intervals = merged_intervals | interval.interval(
                     [ob['tstart'][j], ob['tstop'][j]])
     print('done')
-    print('Merging burst times', end='')
+    print('Merging burst times: ', end='')
     # объединенные времена вспышек
 
-    def notfoundsim(b, merged_bursts):
+    def notfoundsim(b, merged_bursts, delta_t=30):
         # if len(merged_bursts)==0:
             # return True
         for x in merged_bursts:
             delta = (Time(x, format='mjd')-Time(b, format='mjd')
                      ).to_datetime().total_seconds()
-            if (np.abs(delta) <= 30):
+            if (np.abs(delta) <= delta_t):
                 return False
         return True
 
@@ -58,7 +79,8 @@ def efsearch(bursts_url, osbervations_url, bins=10, n_steps=1000, num_simulation
             for j in b:
                 if notfoundsim(j, merged_bursts):
                     merged_bursts.append(j)
-    print('done')
+    merged_bursts = merged_bursts.sort()
+    # Converting from MJD to Y-m-d h:m:s.f string
     time_intervals = []
     for interv in merged_intervals:
         tm1 = Time(interv[0], format='mjd')
@@ -68,13 +90,16 @@ def efsearch(bursts_url, osbervations_url, bins=10, n_steps=1000, num_simulation
         d2 = datetime.datetime.strptime(
             tm2.iso, '%Y-%m-%d %H:%M:%S.%f').strftime("%Y-%m-%d %H:%M:%S.%f")
         time_intervals.append([d1, d2])
-
+    # Converting from MJD to datetime.datetime
     events = []
     for burst in merged_bursts:
         tm = Time(burst, format='mjd')
         d = datetime.datetime.strptime(tm.iso, '%Y-%m-%d %H:%M:%S.%f')
         events.append(d)
 
+    # start datetime.datetime - left interval
+    # intrvls - intervals relatively to start in seconds
+    # evnts - events relatively to start in seconds
     start, intrvls = Events.dates_to_seconds(time_intervals)
     evnts = []
     for event in events:
@@ -84,12 +109,12 @@ def efsearch(bursts_url, osbervations_url, bins=10, n_steps=1000, num_simulation
     print('done')
 
     # поиск периодов на временах порядка часов
-    pmin = (events[1]-events[0]).total_seconds()
-    pmax = 3600*24*1
+    hpmin = np.min(evnts[1:]-evnts[:-1])
+    hpmax = 3600*24*1
     print('Searching periods from ' + str(pmin/(3600)) +
           ' hours to ' + str(pmax/(3600)) + ' hours')
     hper, hstat, hstat_expo = periods_statistic(
-        evnts, intrvls, bins, pmin, pmax, n_steps=n_steps)
+        evnts, intrvls, nbins, hpmin, hpmax, n_steps=n_steps)
 
     def one(t, *args):
         return 1
@@ -104,16 +129,29 @@ def efsearch(bursts_url, osbervations_url, bins=10, n_steps=1000, num_simulation
         xintrvls = np.array(x.intervals_in_seconds)
         print(str(i+1) + '/' + str(num_simulations))
         hxper, xstat, xstat_expo = periods_statistic(
-            xevnts, intrvls, bins, pmin, pmax, n_steps=n_steps)
+            xevnts, intrvls, nbins, hpmin, hpmax, n_steps=n_steps)
         hxstats[i] = xstat_expo
 
+    print('Saving data: ', end='done')
+
+    hours_data = {
+        'Periods': hper,
+        'Chi square (без учета экспозиции)': hstat,
+        'Chi square (с учетом экспозиции)': hstat_expo,
+    }
+    for i in range(num_simulations):
+        hours_data['Simulation ' + str(i)] = hxstats[i]
+    df1 = pd.DataFrame(hours_data)
+    df1.to_csv(saving_directory + name + ':hours.csv', index=False)
+    print('done')
+
     # поиск периодов на временах порядка дней
-    pmin = 3600*24*1
-    pmax = 3600*24*400
+    dpmin = 3600*24*1
+    dpmax = 3600*24*400
     print('Searching periods from ' + str(pmin/(3600*24)) +
           ' days to ' + str(pmax/(3600*24)) + ' days')
     dper, dstat, dstat_expo = periods_statistic(
-        evnts, intrvls, bins, pmin, pmax, n_steps=n_steps)
+        evnts, intrvls, nbins, dpmin, dpmax, n_steps=n_steps)
 
     print('Simulations')
     dxstats = np.zeros((num_simulations, n_steps))
@@ -123,16 +161,27 @@ def efsearch(bursts_url, osbervations_url, bins=10, n_steps=1000, num_simulation
         xintrvls = np.array(x.intervals_in_seconds)
         print(str(i+1) + '/' + str(num_simulations))
         dxper, xstat, xstat_expo = periods_statistic(
-            xevnts, intrvls, bins, pmin, pmax, n_steps=n_steps)
+            xevnts, intrvls, nbins, dpmin, dpmax, n_steps=n_steps)
         dxstats[i] = xstat_expo
 
+    print('Saving data', end='done')
+    days_data = {
+        'Periods': dper,
+        'Chi square (без учета экспозиции)': dstat,
+        'Chi square (с учетом экспозиции)': dstat_expo,
+    }
+    for i in range(num_simulations):
+        days_data['Simulation ' + str(i)] = dxstats[i]
+    df2 = pd.DataFrame(days_data)
+    df2.to_csv(saving_directory + name + ':days.csv', index=False)
+    print('done')
     # поиск периодов на временах порядка года
     pmin = 3600*24*400
     pmax = (evnts[-1]-evnts[0])/2
     print('Searching periods from ' + str(pmin/(3600*24*365)) +
-          ' days to ' + str(pmax/(3600*24*365)) + ' days')
+          ' year to ' + str(pmax/(3600*24*365)) + ' years')
     yper, ystat, ystat_expo = periods_statistic(
-        evnts, intrvls, bins, pmin, pmax, n_steps=n_steps)
+        evnts, intrvls, nbins, pmin, pmax, n_steps=n_steps)
 
     print('Simulations')
     yxstats = np.zeros((num_simulations, n_steps))
@@ -142,39 +191,19 @@ def efsearch(bursts_url, osbervations_url, bins=10, n_steps=1000, num_simulation
         xintrvls = np.array(x.intervals_in_seconds)
         print(str(i+1) + '/' + str(num_simulations))
         yxper, xstat, xstat_expo = periods_statistic(
-            xevnts, intrvls, bins, pmin, pmax, n_steps=n_steps)
-        yxstats[i] = xstat_expo
+            xevnts, intrvls, nbins, pmin, pmax, n_steps=n_steps)
+        yxstats[i] = 9
 
-    print('Saving data')
-
-    hours_data = {
-        'Periods': hper,
-        'Chi square (без учета экспозиции)': hstat,
-        'Chi square (с учетом экспозиции)': hstat,
-    }
-    for i in range(num_simulations):
-        hours_data['Simulation ' + str(i)] = hxstats[i]
-    df1 = pd.DataFrame(hours_data)
-    df1.to_csv('results/' + name + '/' + name + ' :hours.csv', index=False)
-
-    days_data = {
-        'Periods': dper,
-        'Chi square (без учета экспозиции)': dstat,
-        'Chi square (с учетом экспозиции)': dstat,
-    }
-    for i in range(num_simulations):
-        days_data['Simulation ' + str(i)] = dxstats[i]
-    df2 = pd.DataFrame(days_data)
-    df2.to_csv('results/' + name + '/' + name + ' :days.csv', index=False)
-
+    print('Saving data', end='done')
     years_data = {
         'Periods': yper,
         'Chi square (без учета экспозиции)': ystat,
-        'Chi square (с учетом экспозиции)': ystat,
+        'Chi square (с учетом экспозиции)': ystat_expo,
     }
     for i in range(num_simulations):
         years_data['Simulation ' + str(i)] = yxstats[i]
     df3 = pd.DataFrame(years_data)
-    df3.to_csv('results/' + name + '/' + name + ' :years.csv', index=False)
+    df3.to_csv(saving_directory + name + ':years.csv', index=False)
+    print('done')
 
     return hper, hstat, hstat_expo, hxstats, dper, dstat, dstat_expo, dxstats, yper, ystat, ystat_expo, yxstats
