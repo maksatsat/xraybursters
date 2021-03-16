@@ -233,7 +233,7 @@ def efsearch(name, nbins=10, n_steps=1000, num_simulations=100, saving=True, pmi
         if saving:
             print('Saving data', end='done')
             years_data = {
-                'Periods': yper,
+                'Periods': per,
                 'Chi square (без учета экспозиции)': stat,
                 'Chi square (с учетом экспозиции)': stat_expo,
             }
