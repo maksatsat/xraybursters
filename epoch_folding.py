@@ -242,4 +242,4 @@ def efsearch(name, nbins=10, n_steps=1000, num_simulations=100, saving=True, pmi
             df3 = pd.DataFrame(years_data)
             df3.to_csv(saving_directory + name + ':custom.csv', index=False)
             print('done')
-        return per, hstat, stat_expo, xstats
+        return per, stat, stat_expo, xstats
