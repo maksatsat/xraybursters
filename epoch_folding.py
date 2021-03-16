@@ -151,7 +151,7 @@ def efsearch(name, nbins=10, n_steps=1000, num_simulations=100, saving=True, pmi
         dpmin = 3600*24*1
         dpmax = 3600*24*400
         print('Searching periods from ' + str(dpmin/(3600*24)) +
-              ' days to ' + str(dpmax/(3600*24)) + ' days')
+              ' day to ' + str(dpmax/(3600*24)) + ' days')
         dper, dstat, dstat_expo = periods_statistic(
             evnts, intrvls, nbins, dpmin, dpmax, n_steps=n_steps)
 
@@ -219,6 +219,7 @@ def efsearch(name, nbins=10, n_steps=1000, num_simulations=100, saving=True, pmi
             evnts, intrvls, nbins, pmin, pmax, n_steps=n_steps)
 
         print('Simulations')
+        freq = len(evnts)/np.sum(intrvls.T[1]-intrvls.T[0])
         xstats = np.zeros((num_simulations, n_steps))
         for i in range(num_simulations):
             x = Events(freq, time_intervals, one, 0)
