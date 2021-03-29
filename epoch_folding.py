@@ -153,7 +153,7 @@ def efsearch(name, nbins=10, n_steps=1000, num_simulations=100, saving=True, pmi
         print('Searching periods from ' + str(dpmin/(3600*24)) +
               ' day to ' + str(dpmax/(3600*24)) + ' days')
         dper, dstat, dstat_expo = periods_statistic(
-            evnts, intrvls, nbins, dpmin, dpmax, n_steps=n_steps, reduced_chi_squared=reduced_chi_squared=reduced_chi_squared)
+            evnts, intrvls, nbins, dpmin, dpmax, n_steps=n_steps, reduced_chi_squared=reduced_chi_squared)
 
         print('Simulations')
         dxstats = np.zeros((num_simulations, n_steps))
