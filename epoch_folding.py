@@ -10,7 +10,7 @@ from event_generator import Events
 from search_period import periods_statistic
 
 
-def efsearch(name, nbins=10, n_steps=1000, num_simulations=100, saving=True, pmin=None, pmax=None):
+def efsearch(name, nbins=10, n_steps=1000, num_simulations=100, saving=True, pmin=None, pmax=None, reduced_chi_squared=False):
     # saving_directory = 'results/' + name + '/'
     saving_directory = '/'
     bursts_url = 'https://burst.sci.monash.edu/aqoutput?dtype=bursts&fields=name%2Ctime%2Cinstr&output=topcat&timef=mjd&qfield=name&query_op=%3D&query_val=' + \
@@ -118,7 +118,7 @@ def efsearch(name, nbins=10, n_steps=1000, num_simulations=100, saving=True, pmi
         print('Searching periods from ' + str(hpmin/(3600)) +
               ' hours to ' + str(hpmax/(3600)) + ' hours')
         hper, hstat, hstat_expo = periods_statistic(
-            evnts, intrvls, nbins, hpmin, hpmax, n_steps=n_steps)
+            evnts, intrvls, nbins, hpmin, hpmax, n_steps=n_steps, reduced_chi_squared=reduced_chi_squared)
 
         print('Simulations')
         freq = len(evnts)/np.sum(intrvls.T[1]-intrvls.T[0])
@@ -130,7 +130,7 @@ def efsearch(name, nbins=10, n_steps=1000, num_simulations=100, saving=True, pmi
             xintrvls = np.array(x.intervals_in_seconds)
             print(str(i+1) + '/' + str(num_simulations))
             hxper, xstat, xstat_expo = periods_statistic(
-                xevnts, intrvls, nbins, hpmin, hpmax, n_steps=n_steps)
+                xevnts, intrvls, nbins, hpmin, hpmax, n_steps=n_steps, reduced_chi_squared=reduced_chi_squared)
             hxstats[i] = xstat_expo
 
         if saving:
@@ -153,7 +153,7 @@ def efsearch(name, nbins=10, n_steps=1000, num_simulations=100, saving=True, pmi
         print('Searching periods from ' + str(dpmin/(3600*24)) +
               ' day to ' + str(dpmax/(3600*24)) + ' days')
         dper, dstat, dstat_expo = periods_statistic(
-            evnts, intrvls, nbins, dpmin, dpmax, n_steps=n_steps)
+            evnts, intrvls, nbins, dpmin, dpmax, n_steps=n_steps, reduced_chi_squared=reduced_chi_squared=reduced_chi_squared)
 
         print('Simulations')
         dxstats = np.zeros((num_simulations, n_steps))
@@ -163,7 +163,7 @@ def efsearch(name, nbins=10, n_steps=1000, num_simulations=100, saving=True, pmi
             xintrvls = np.array(x.intervals_in_seconds)
             print(str(i+1) + '/' + str(num_simulations))
             dxper, xstat, xstat_expo = periods_statistic(
-                xevnts, intrvls, nbins, dpmin, dpmax, n_steps=n_steps)
+                xevnts, intrvls, nbins, dpmin, dpmax, n_steps=n_steps, reduced_chi_squared=reduced_chi_squared)
             dxstats[i] = xstat_expo
 
         if saving:
@@ -184,7 +184,7 @@ def efsearch(name, nbins=10, n_steps=1000, num_simulations=100, saving=True, pmi
         print('Searching periods from ' + str(ypmin/(3600*24*365)) +
               ' year to ' + str(ypmax/(3600*24*365)) + ' years')
         yper, ystat, ystat_expo = periods_statistic(
-            evnts, intrvls, nbins, ypmin, ypmax, n_steps=n_steps)
+            evnts, intrvls, nbins, ypmin, ypmax, n_steps=n_steps, reduced_chi_squared=reduced_chi_squared)
 
         print('Simulations')
         yxstats = np.zeros((num_simulations, n_steps))
@@ -194,7 +194,7 @@ def efsearch(name, nbins=10, n_steps=1000, num_simulations=100, saving=True, pmi
             xintrvls = np.array(x.intervals_in_seconds)
             print(str(i+1) + '/' + str(num_simulations))
             yxper, xstat, xstat_expo = periods_statistic(
-                xevnts, intrvls, nbins, ypmin, ypmax, n_steps=n_steps)
+                xevnts, intrvls, nbins, ypmin, ypmax, n_steps=n_steps, reduced_chi_squared=reduced_chi_squared)
             yxstats[i] = xstat_expo
 
         if saving:
@@ -216,7 +216,7 @@ def efsearch(name, nbins=10, n_steps=1000, num_simulations=100, saving=True, pmi
         print('Searching periods from ' + str(pmin/(3600*24)) +
               ' days to ' + str(pmax/(3600*24)) + ' days')
         per, stat, stat_expo = periods_statistic(
-            evnts, intrvls, nbins, pmin, pmax, n_steps=n_steps)
+            evnts, intrvls, nbins, pmin, pmax, n_steps=n_steps, reduced_chi_squared=reduced_chi_squared)
 
         print('Simulations')
         freq = len(evnts)/np.sum(intrvls.T[1]-intrvls.T[0])
@@ -227,7 +227,7 @@ def efsearch(name, nbins=10, n_steps=1000, num_simulations=100, saving=True, pmi
             xintrvls = np.array(x.intervals_in_seconds)
             print(str(i+1) + '/' + str(num_simulations))
             xper, xstat, xstat_expo = periods_statistic(
-                xevnts, intrvls, nbins, pmin, pmax, n_steps=n_steps)
+                xevnts, intrvls, nbins, pmin, pmax, n_steps=n_steps, reduced_chi_squared=reduced_chi_squared)
             xstats[i] = xstat_expo
 
         if saving:

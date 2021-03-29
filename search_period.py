@@ -2,7 +2,7 @@ import numpy as np
 import time
 
 
-def periods_statistic(events, intervals, nbins, pmin, pmax, n_steps=1000):
+def periods_statistic(events, intervals, nbins, pmin, pmax, n_steps=1000, reduced_chi_squared=False):
 
     def _chi_2(fold, evnts, intervals, exposure, periods, nbins):
         folded = _fold(evnts, periods, nbins)  # (n_periods, nbins)
@@ -21,10 +21,16 @@ def periods_statistic(events, intervals, nbins, pmin, pmax, n_steps=1000):
         expected_expo = p*expo
         chi_square_expo = np.zeros(len(periods))
         for i, period in enumerate(periods):
+            df = nbins
             for j in range(nbins):
                 if expo[i][j] > 0:
                     chi_square_expo[i] += (folded[i][j] -
                                            expected_expo[i][j])**2/expected_expo[i][j]
+                elif reduced_chi_squared:
+                    df -= 1
+            if reduced_chi_squared:
+                chi_square_expo[i] /= df
+
         # expo_time = exposure(intervals, periods, nbins)  # (n_periods, nbins)
         # expo = expo = (expo_time.T/expo_time.max(axis=1)).T
         # expected_expo = len(evnts)/np.sum(intervals.T[1]-intervals.T[0])*expo
